@@ -9,5 +9,6 @@ namespace UserDataRepositoryLayer.Interfaces
     {
         List<User> GetAllUsers();
         User RegisterUser(NewUser newUser);
+        Response Login(Login loginDetails);
     }
 }

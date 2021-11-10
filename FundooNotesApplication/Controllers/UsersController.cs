@@ -46,5 +46,19 @@ namespace FundooNotesApplication.Controllers
                 return this.BadRequest(new { Success = false, Message = e.Message });
             }
         }
+        [Route("Login")]
+        [HttpPost]
+        public ActionResult Login(Login loginDetails)
+        {
+            try
+            {
+                Response usersData = this._userDataOperations.Login(loginDetails);
+                return this.Ok(new { Success = true, Message = "User Login is successful", Data = usersData });
+            }
+            catch (Exception e)
+            {
+                return this.BadRequest(new { Success = false, Message = e.Message });
+            }
+        }
     }
 }

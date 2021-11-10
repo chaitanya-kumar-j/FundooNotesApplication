@@ -14,6 +14,9 @@ namespace UserDataBusinessLogicLayer.Services
         {
             this._userDataAccess = userDataAccess;
         }
+
+        
+
         public List<User> GetAllUsers()
         {
             try
@@ -31,6 +34,17 @@ namespace UserDataBusinessLogicLayer.Services
             try
             {
                 return this._userDataAccess.RegisterUser(newUser);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+        public Response Login(Login loginDetails)
+        {
+            try
+            {
+                return this._userDataAccess.Login(loginDetails);
             }
             catch (Exception e)
             {
