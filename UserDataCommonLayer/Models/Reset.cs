@@ -5,11 +5,12 @@ using System.Text;
 
 namespace UserDataCommonLayer.Models
 {
-    public class Login
+    public class Reset
     {
+        // public int UserId { get; set; }
         [Required]
-        public string Email { get; set; }
+        public string CurrentPassword { get; set; }
         [Required]
-        public string Password { get; set; }
+        public string NewPassword { get; set; }
     }
 }

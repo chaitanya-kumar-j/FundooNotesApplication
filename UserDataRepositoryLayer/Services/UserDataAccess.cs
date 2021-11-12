@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using UserDataCommonLayer.Models;
 using UserDataRepositoryLayer.Interfaces;
+using UserDataRepositoryLayer.Services;
 
 namespace UserDataRepositoryLayer.Services
 {
@@ -16,6 +17,7 @@ namespace UserDataRepositoryLayer.Services
     {
         private readonly string _connectionString;
         private readonly string _secretKey;
+
         public UserDataAccess(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("defaultConnection");
@@ -130,9 +132,6 @@ namespace UserDataRepositoryLayer.Services
                         user.Email = (string)row["Email"];
                     }
                 }
-                if (user == null) return null;
-                var token = generateJwtToken(user);
-
                 return new Response()
                 {
                     UserId = user.UserId,
@@ -141,7 +140,51 @@ namespace UserDataRepositoryLayer.Services
                     City = user.City,
                     MobileNumber = user.MobileNumber,
                     Email = user.Email,
-                    Token = token
+                };
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+        public Response ResetPassword(int userId, Reset resetDetails)
+        {
+            try
+            {
+                DataSet dataSet = new DataSet();
+                User user = new User();
+                string storedProcedure = "spResetPassword";
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(storedProcedure, connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        cmd.Parameters.AddWithValue("@CurrentPassword", resetDetails.CurrentPassword);
+                        cmd.Parameters.AddWithValue("@NewPassword", resetDetails.NewPassword);
+                        using (var adapter = new SqlDataAdapter(cmd))
+                        {
+                            adapter.Fill(dataSet, "UserInfo");
+                        }
+                    }
+                    foreach (DataRow row in dataSet.Tables["UserInfo"].Rows)
+                    {
+                        user.UserId = (int)row["UserId"];
+                        user.FirstName = (string)row["FirstName"];
+                        user.LastName = (string)row["LastName"];
+                        user.City = (string)row["City"];
+                        user.MobileNumber = (string)row["MobileNumber"];
+                        user.Email = (string)row["Email"];
+                    }
+                }
+                return new Response()
+                {
+                    UserId = user.UserId,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    City = user.City,
+                    MobileNumber = user.MobileNumber,
+                    Email = user.Email,
                 };
             }
             catch (Exception e)
@@ -150,19 +193,5 @@ namespace UserDataRepositoryLayer.Services
             }
         }
 
-        private string generateJwtToken(User user)
-        {
-            // generate token that is valid for 7 days
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_secretKey);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[] { new Claim("UserId", user.UserId.ToString()) }),
-                Expires = DateTime.UtcNow.AddMinutes(15),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
     }
 }

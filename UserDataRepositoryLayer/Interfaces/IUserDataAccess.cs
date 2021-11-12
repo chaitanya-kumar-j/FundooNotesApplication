@@ -10,5 +10,6 @@ namespace UserDataRepositoryLayer.Interfaces
         List<User> GetAllUsers();
         User RegisterUser(NewUser newUser);
         Response Login(Login loginDetails);
+        Response ResetPassword(int userId, Reset resetDetails);
     }
 }

@@ -28,6 +28,11 @@ TransactionType Nvarchar(50) not null unique
 )
 
 insert into TransactionTypesInfo values ('Login')
+insert into TransactionTypesInfo values ('ResetPassword')
+insert into TransactionTypesInfo values ('CreateNotes')
+insert into TransactionTypesInfo values ('EditNotes')
+insert into TransactionTypesInfo values ('DeleteNotes')
+
 
 select * from TransactionTypesInfo
 --**************************************************************************
@@ -105,3 +110,25 @@ else
 	insert into TransactionsInfo values (@userId,1,GETDATE())
 	end
 end
+
+--**************************************************************************
+-- procedure to reset password
+alter procedure spResetPassword
+(@UserId Nvarchar(50), @CurrentPassword Nvarchar(50), @NewPassword Nvarchar(50))
+as
+begin
+	declare @userCount int
+	select @userCount = count(UserId) from UserInfo where UserId = @UserId and Password = @CurrentPassword
+
+	if (@userCount <>1)
+		begin
+		Raiserror('Entered wrong password in current password.',16,1)
+		end
+	else
+		begin
+		update UserInfo set Password = @NewPassword where UserId = @UserId and Password =@CurrentPassword
+		select * from UserInfo where UserId = @UserId and Password = @NewPassword
+		insert into TransactionsInfo values (@userId,2,GETDATE())
+		end
+end
+

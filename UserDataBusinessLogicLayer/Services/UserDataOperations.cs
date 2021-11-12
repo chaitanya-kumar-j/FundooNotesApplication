@@ -44,7 +44,20 @@ namespace UserDataBusinessLogicLayer.Services
         {
             try
             {
+                
                 return this._userDataAccess.Login(loginDetails);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+        public Response ResetPassword(int userId, Reset resetDetails)
+        {
+            try
+            {
+                return this._userDataAccess.ResetPassword(userId, resetDetails);
             }
             catch (Exception e)
             {

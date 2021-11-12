@@ -1,11 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using UserDataBusinessLogicLayer.Interfaces;
 using UserDataCommonLayer.Models;
+using UserDataRepositoryLayer.Services;
 
 namespace FundooNotesApplication.Controllers
 {
@@ -14,9 +18,11 @@ namespace FundooNotesApplication.Controllers
     public class UsersController : ControllerBase
     {
         private IUserDataOperations _userDataOperations;
-        public UsersController(IUserDataOperations userDataOperations)
+        private IConfiguration _configuration;
+        public UsersController(IUserDataOperations userDataOperations, IConfiguration configuration)
         {
             this._userDataOperations = userDataOperations;
+            this._configuration = configuration;
         }
 
         [HttpGet]
@@ -52,13 +58,38 @@ namespace FundooNotesApplication.Controllers
         {
             try
             {
+                
                 Response usersData = this._userDataOperations.Login(loginDetails);
-                return this.Ok(new { Success = true, Message = "User Login is successful", Data = usersData });
+                string token = new JwtService(_configuration).GenerateSecurityToken(usersData);
+                return this.Ok(new { Success = true, Message = "User Login is successful", Data = usersData, Token = token });
             }
             catch (Exception e)
             {
                 return this.BadRequest(new { Success = false, Message = e.Message });
             }
         }
+        [Authorize]
+        [HttpPut("ResetPassword")]
+        public ActionResult ResetPassword(Reset resetDetails)
+        {
+            try
+            {
+                var currentUser = HttpContext.User;
+                int userId = Convert.ToInt32(currentUser.Claims.FirstOrDefault(c => c.Type == "UserId").Value);
+                Response response = this._userDataOperations.ResetPassword(userId, resetDetails);
+                return this.Ok(new { Success = true, Message = "Password reset is successful", Data = response });
+                
+            }
+            catch (Exception e)
+            {
+                return this.BadRequest(new { Success = false, Message = e.Message });
+            }
+        }
+        //[Authorize]
+        //[HttpPut("ForgetPassword")]
+        //public ActionResult ForgetPassword(Reset resetDetails)
+        //{
+        //    return;
+        //}
     }
 }

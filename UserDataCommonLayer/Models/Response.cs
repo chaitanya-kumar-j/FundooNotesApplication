@@ -12,7 +12,6 @@ namespace UserDataCommonLayer.Models
         public string City { get; set; }
         public string MobileNumber { get; set; }
         public string Email { get; set; }
-        public string Token { get; set; }
 
     }
 }
