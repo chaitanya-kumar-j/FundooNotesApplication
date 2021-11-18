@@ -64,5 +64,17 @@ namespace UserDataBusinessLogicLayer.Services
                 throw;
             }
         }
+
+        public void ForgotPassword(string email)
+        {
+            try
+            {
+                this._userDataAccess.ForgotPassword(email);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
     }
 }

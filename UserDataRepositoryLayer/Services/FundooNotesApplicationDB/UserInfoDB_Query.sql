@@ -32,6 +32,7 @@ insert into TransactionTypesInfo values ('ResetPassword')
 insert into TransactionTypesInfo values ('CreateNotes')
 insert into TransactionTypesInfo values ('EditNotes')
 insert into TransactionTypesInfo values ('DeleteNotes')
+insert into TransactionTypesInfo values ('ForgotPassword')
 
 
 select * from TransactionTypesInfo
@@ -91,7 +92,7 @@ end
 exec spRegistration 'ChaitanyaKumar','Jinka','Proddatur','9398459597','chaitanyakumar.jinka@gmail.com','Chaitanya@123'
 --**************************************************************************
 -- procedure to login
-create procedure spUserLogin
+alter procedure spUserLogin
 (@Email Nvarchar(50), @Password Nvarchar(50))
 as
 begin
@@ -104,10 +105,18 @@ if (@userCount <>1)
 	end
 else
 	begin
-	select * from UserInfo where Email = @Email and Password = @Password
-	declare @userId int
-	select @userId = UserId from UserInfo where Email = @Email
-	insert into TransactionsInfo values (@userId,1,GETDATE())
+	select @userCount = count(UserId) from UserInfo where Email = @Email and Password = @Password
+	if (@userCount <>1)
+		begin
+		Raiserror('Password entered is incorrect.',16,1)
+		end
+	else
+		begin
+		select * from UserInfo where Email = @Email and Password = @Password
+		declare @userId int
+		select @userId = UserId from UserInfo where Email = @Email
+		insert into TransactionsInfo values (@userId,1,GETDATE())
+		end
 	end
 end
 
@@ -131,4 +140,24 @@ begin
 		insert into TransactionsInfo values (@userId,2,GETDATE())
 		end
 end
+
+--**************************************************************************
+-- procedure to forgot password
+create procedure spForotPassword
+(@UserId int, @NewPassword Nvarchar(50))
+as
+begin
+	update UserInfo set Password = @NewPassword where UserId = @UserId
+	select * from UserInfo where UserId = @UserId and Password = @NewPassword
+	insert into TransactionsInfo values (@userId,6,GETDATE())
+end
+--**************************************************************************
+-- procedure to get userId by Email
+create procedure spGetUserId
+(@Email Nvarchar(50))
+as
+begin
+	select UserId from UserInfo where Email = @Email
+end
+--**************************************************************************
 

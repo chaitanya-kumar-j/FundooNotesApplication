@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using UserDataCommonLayer.Models;
 using UserDataRepositoryLayer.Interfaces;
@@ -17,11 +18,16 @@ namespace UserDataRepositoryLayer.Services
     {
         private readonly string _connectionString;
         private readonly string _secretKey;
-
-        public UserDataAccess(IConfiguration configuration)
+        private IConfiguration _configuration;
+        private string _queuePath;
+        public IEmailService _emailService;
+        public UserDataAccess(IConfiguration configuration, IEmailService emailService)
         {
+            _configuration = configuration;
             _connectionString = configuration.GetConnectionString("defaultConnection");
             _secretKey = configuration.GetValue<string>("AppSettings:SecretKey");
+            _queuePath = configuration.GetValue<string>("MessageQueuePath");
+            _emailService = emailService;
         }
         public List<User> GetAllUsers()
         {
@@ -62,7 +68,7 @@ namespace UserDataRepositoryLayer.Services
         public User RegisterUser(NewUser newUser)
         {
             try
-            {
+            {                
                 DataSet dataSet = new DataSet();
                 User user = new User();
                 string storedProcedure = "spRegistration";
@@ -192,6 +198,57 @@ namespace UserDataRepositoryLayer.Services
                 throw;
             }
         }
+
+        public void ForgotPassword(string email)
+        {
+            try
+            {
+                DataSet dataSet = new DataSet();
+                User user = new User();
+                string storedProcedure = "spGetUserId";
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(storedProcedure, connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@Email", email);
+                        using (var adapter = new SqlDataAdapter(cmd))
+                        {
+                            adapter.Fill(dataSet, "UserInfo");
+                        }
+                    }
+                    foreach (DataRow row in dataSet.Tables["UserInfo"].Rows)
+                    {
+                        user.UserId = (int)row["UserId"];
+                        user.Email = email;
+                    }
+                }
+                Response userData = new Response() { UserId = user.UserId, Email = user.Email };
+                string token = new JwtService(_configuration).GenerateSecurityToken(userData);
+                TokenMessage tokenMessage = new TokenMessage() { Email = email, Token = token };
+                new MSMQ_Service(_configuration, _emailService).SendToken(tokenMessage);
+                // new MSMQ_Service().ReceiveToken();
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+        // private helper methods
+
+        private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        {
+            if (password == null) throw new ArgumentNullException("password");
+            if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Value cannot be empty or whitespace only string.", "password");
+
+            using (var hmac = new System.Security.Cryptography.HMACSHA512())
+            {
+                passwordSalt = hmac.Key;
+                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            }
+        }
+
 
     }
 }

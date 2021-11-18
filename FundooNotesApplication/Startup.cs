@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UserDataBusinessLogicLayer.Interfaces;
 using UserDataBusinessLogicLayer.Services;
+using UserDataCommonLayer.Models;
 using UserDataRepositoryLayer.Interfaces;
 using UserDataRepositoryLayer.Services;
 
@@ -63,6 +64,10 @@ namespace FundooNotesApplication
             });
             services.AddSingleton<IUserDataAccess, UserDataAccess>();
             services.AddSingleton<IUserDataOperations, UserDataOperations>();
+            services.AddSingleton<INotesOperations, NotesOperations>();
+            services.AddSingleton<INotesAccess, NotesAccess>();
+            services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
+            services.AddSingleton<IEmailService, EmailService>();
 
             var secret = Configuration.GetSection("JwtConfig").GetSection("SecretKey").Value;
             var key = Encoding.ASCII.GetBytes(secret);

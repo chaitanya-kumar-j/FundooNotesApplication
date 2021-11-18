@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using UserDataBusinessLogicLayer.Interfaces;
 using UserDataCommonLayer.Models;
+using UserDataRepositoryLayer.Interfaces;
 using UserDataRepositoryLayer.Services;
 
 namespace FundooNotesApplication.Controllers
@@ -19,10 +20,14 @@ namespace FundooNotesApplication.Controllers
     {
         private IUserDataOperations _userDataOperations;
         private IConfiguration _configuration;
-        public UsersController(IUserDataOperations userDataOperations, IConfiguration configuration)
+        public readonly IEmailService _emailService;
+
+
+        public UsersController(IUserDataOperations userDataOperations, IConfiguration configuration, IEmailService emailService)
         {
             this._userDataOperations = userDataOperations;
             this._configuration = configuration;
+            this._emailService = emailService;
         }
 
         [HttpGet]
@@ -85,11 +90,21 @@ namespace FundooNotesApplication.Controllers
                 return this.BadRequest(new { Success = false, Message = e.Message });
             }
         }
-        //[Authorize]
-        //[HttpPut("ForgetPassword")]
-        //public ActionResult ForgetPassword(Reset resetDetails)
-        //{
-        //    return;
-        //}
+        
+        [HttpPut("ForgetPassword")]
+        public ActionResult ForgetPassword(string email)
+        {
+            try
+            {
+                _userDataOperations.ForgotPassword(email);
+                return this.Ok(new { Success = true, Message = "Reset link sent successfully"});
+
+            }
+            catch (Exception e)
+            {
+                return this.BadRequest(new { Success = false, Message = e.Message });
+            }
+        }
+
     }
 }
